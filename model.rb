@@ -16,7 +16,7 @@ class RedisishDatabase
 		target = retrieve_record(key)
 
 		if target[:record]
-			adjust_frequency_of(target[:record].value, -1)
+			adjust_frequency_of(target[:record].value, -1) if target[:record].value != nil
 			target[:record].value = new_value
 			adjust_frequency_of(target[:record].value, 1)
 		else
@@ -79,6 +79,7 @@ private
 	end
 
 	def adjust_frequency_of(value, amount)
+		puts "adjusting frequency of #{value} by #{amount}"
 		target = retrieve_frequency_of(value)
 
 		if target[:record]
