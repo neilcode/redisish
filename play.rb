@@ -22,7 +22,7 @@ class Record
 end
 
 database = []
-11.times do |num|
+20.times do |num|
 	database[num] = rand(100)
 end
 database.uniq!
@@ -30,42 +30,50 @@ database.sort!
 
 database.map! {|num| Record.new(num, 'fake value')}
 
-def search_for_key(searchterm, data)
-	return 0 if data.length == 0
-
-	low  = 0
-	high = data.length-1
-	mid  = ((high - low)/2)
-
-	while (high-low>1)
-		if searchterm == data[mid].key
-			return data[mid]
-		elsif searchterm < data[mid].key
-			high = mid
-			mid -= ((high-low)/2)
-		elsif searchterm > data[mid].key
-			low  = mid
-			mid += ((high-low)/2)
-		end
+def showdb(database)
+	database.each_with_index do |record, index|
+		p "#{index}: #{record.key} - #{record.value}\n"
 	end
-	
-	# if searchterm < high
-	# 	return high-1
-	# else
-	# 	return high+1
-	# end
-
 end
 
 
 
-attempt = database.sample
-
-p attempt
-result = search_for_key(attempt.key, database)
-
-# database.insert(result, Record.new(12, 'BINGO'))
+def locate(searchterm, data)
+	#edge cases
+	return 0 if data.empty?
 
 
-# p database == database.sort_by {|k| k.key}
+	low  = 0
+	high = data.length-1
+	mid  = ((low+high)/2)
+	while (low < high)
+		if searchterm == data[mid].key
+			return data[mid]
+		elsif searchterm < data[mid].key
+			high = mid-1
+		elsif searchterm > data[mid].key
+			low  = mid+1
+		end
+		mid = ((low + high)/2)
+	end
+
+	puts "final result:"
+	puts "low: #{low} - mid: #{mid} - high: #{high}"
+	return data[mid] if data[mid].key == searchterm
+	return mid+1 		 if searchterm > data[mid].key
+	return mid 			 if searchterm < data[mid].key
+end
+
+
+showdb(database)
+not_present = rand(100)
+while database.count{|record| record.key == not_present} > 0
+	not_present = rand(100)
+end 
+	
+p "ATTEMPTING TO FIND BEST SLOT FOR: #{not_present}"
+result = locate(not_present, database)
+
+database.insert(result, Record.new(not_present, 'BINGO'))
+p database == database.sort_by {|k| k.key}
 

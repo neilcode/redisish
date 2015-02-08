@@ -4,29 +4,8 @@ class RedisishDatabase
 		@frequencymap = []
 	end
 
-	def search_for_key(searchterm, data)
-		# return 0 if data.length == 0 ??
-
-		low  = 0
-		high = data.length-1
-		mid  = ((high - low)/2)
-
-		while (high-low>1)
-			if searchterm == data[mid].key
-				#unique record found, so return it
-				return data[mid]
-			elsif searchterm < data[mid].key
-				high = mid
-				mid -= ((high-low)/2)
-			elsif searchterm > data[mid].key
-				low  = mid
-				mid += ((high-low)/2)
-			end
-		end
-		return high
-	end
-
 	def store(key, value)
+		
 		value = value.to_i
 		@storage.store(key, value)
 		if @frequencymap[value]
@@ -58,7 +37,8 @@ class RedisishDatabase
 		@frequencymap[value]
 	end
 
-	private
+private
+
 	class Record
 		attr_accessor :key, :value
 		def initialize(key, value)
@@ -66,4 +46,39 @@ class RedisishDatabase
 			@value = value
 		end
 	end
+
+	def locate(searchterm, data)
+		#edge cases
+		return 0 if data.empty?
+
+		low  = 0
+		high = data.length-1
+		mid  = ((low+high)/2)
+
+		while (low < high)
+			if searchterm == data[mid].key
+				return data[mid] 
+			elsif searchterm < data[mid].key
+				high = mid-1
+			elsif searchterm > data[mid].key
+				low  = mid+1
+			end
+			mid = ((low + high)/2)
+		end
+		return data[mid] if data[mid].key == searchterm
+		
+		#no Record found, figure out best index for a new Record
+		return mid+1 		 if searchterm > data[mid].key
+		return mid 			 if searchterm < data[mid].key
+	end
+
+	def change_or_create_new(key, value)
+		location = self.locate(key, @database)
+		if location.class == Fixnum
+			@database.insert(location, Record.new(key, value))
+		elsif location.class == Record
+			location.value = value
+
+	end
+
 end
