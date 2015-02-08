@@ -1,51 +1,71 @@
 stack = []
-# ARGF.each_line do |line|
-# 	# continue if line.nil?
-# 	stack << line
-# 	break if ARGF.eof?
-# end
 
-# WORKS!
+#WORKS
 # input = ARGF
-# p input
+# #p input
 # until input.eof?
-# 	if input.empty?
-# 		puts "no file passed"
-# 		if line == "END\n"
-# 			puts "i saw an END"
-# 			break
-# 		end
-# 	else
+# 	line = input.readline
+# 	p line
 
-# 		line = input.readline
-# 		puts line
-
-# 		if line == "END\n"
-# 			puts "i saw an END"
-# 			break
-# 		end
+# 	if line == "END\n" || line == "END"
+# 		puts "i saw an END"
+# 		break
 # 	end
 # end
 
-
-def parse_instructions(stack=nil)
-	until stack.first == "END"
-		current_task = stack.pop
-		case instruction.first
-		when "SET"
-			puts "setting #{instruction[1]} to #{instruction[2]}"
-		when "GET"
-			puts "getting the value of #{instruction[1]}"
-		when "UNSET"
-			puts "setting #{instruction[1]} to NULL"
-		when "NUMEQUALS"
-			puts "finding the number of entries equal to #{instruction[1]}"
-		when "BEGIN"
-			
-			
-		
+class Record
+	attr_accessor :key, :value
+	def initialize(key, value)
+		@key = key
+		@value = value
 	end
 end
 
+database = []
+11.times do |num|
+	database[num] = rand(100)
+end
+database.uniq!
+database.sort!
 
+database.map! {|num| Record.new(num, 'fake value')}
+
+def search_for_key(searchterm, data)
+	return 0 if data.length == 0
+
+	low  = 0
+	high = data.length-1
+	mid  = ((high - low)/2)
+
+	while (high-low>1)
+		if searchterm == data[mid].key
+			return data[mid]
+		elsif searchterm < data[mid].key
+			high = mid
+			mid -= ((high-low)/2)
+		elsif searchterm > data[mid].key
+			low  = mid
+			mid += ((high-low)/2)
+		end
+	end
+	
+	# if searchterm < high
+	# 	return high-1
+	# else
+	# 	return high+1
+	# end
+
+end
+
+
+
+attempt = database.sample
+
+p attempt
+result = search_for_key(attempt.key, database)
+
+# database.insert(result, Record.new(12, 'BINGO'))
+
+
+# p database == database.sort_by {|k| k.key}
 
