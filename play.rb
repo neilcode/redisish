@@ -20,10 +20,10 @@ class Record
 		@value = value
 	end
 end
-
+ALPHABET = %w(a b c d e f g h i j k l m n o p q r s t u v w x y z)
 database = []
 20.times do |num|
-	database[num] = rand(100)
+	database[num] = ALPHABET.sample
 end
 database.uniq!
 database.sort!
@@ -66,9 +66,9 @@ end
 
 
 showdb(database)
-not_present = rand(100)
+not_present = ALPHABET.sample
 while database.count{|record| record.key == not_present} > 0
-	not_present = rand(100)
+	not_present = ALPHABET.sample
 end 
 	
 p "ATTEMPTING TO FIND BEST SLOT FOR: #{not_present}"

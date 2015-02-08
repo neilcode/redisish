@@ -1,5 +1,5 @@
 class ThumbtackController
-	def initialize(commands=[], database=Database.new, view=View.new)
+	def initialize(commands=[], database=nil, view=nil)
 		@commands = commands
 		@database = database
 		@view 		= view
@@ -7,7 +7,6 @@ class ThumbtackController
 
 	def prepare_instructions
 		@commands.map! { |command| command.split(' ') }
-		@view.out("converting instructions...")
 	end
 
 	def process
@@ -20,14 +19,13 @@ class ThumbtackController
 			
 			case action
 			when 'SET'
-				@database.store(key, value)
+				@database.store(key, value.to_i)
 			when 'UNSET'
 				@database.wipe(key)
 			when 'GET'
-				@view.out(@database.retrieve(key))
+				@view.out(@database.retrieve_record(key)[:record].value || 'NULL')
 			when 'NUMEQUALTO'
-
-				@view.out(@database.keys_set_to(value))
+				@view.out(@database.keys_set_to(value.to_i))
 			else
 				#@view.out(action)
 			end

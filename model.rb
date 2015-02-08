@@ -1,43 +1,39 @@
 class RedisishDatabase
 	def initialize
-		@storage      = []
-		@frequencymap = []
+		@storage   = []
+		@frequency = []
 	end
 
-	def store(key, value)
-		
-		value = value.to_i
-		@storage.store(key, value)
-		if @frequencymap[value]
-			@frequencymap[value] += 1
+	def store(key, new_value)
+		target = retrieve_record(key)
+
+		if target[:record]
+			adjust_frequency_of(target[:record].value, -1)
+			target[:record].value = new_value
+			adjust_frequency_of(target[:record].value, 1)
 		else
-			@frequencymap[value] = 1
+			create_new(Record.new(key, new_value), target[:index])
+			adjust_frequency_of(new_value, 1)
 		end
 	end
 
 	def wipe(key)
-		if @storage[key]
-			@frequencymap[self.retrieve(key)] -= 1
-			@storage[key] = nil
-		else
-			@storage[key] = nil
-		end
+		target = retrieve_record(key)
+		if target[:record]
+			adjust_frequency_of(target[:record].value, -1)
+			target[:record].value = nil 
 	end
 
-	def retrieve(key)
-		if @storage[key]
-			return @storage[key]
-		else
-			return "NULL"
-		end
+	def retrieve_record(key)
+		locate(key, @storage)
 	end
 
 	def keys_set_to(value)
-		value = value.to_i
-		@frequencymap[value]
+		target = retrieve_frequency_of(value)
+		target[:record].value || 0
 	end
 
-private
+	private
 
 	class Record
 		attr_accessor :key, :value
@@ -47,38 +43,57 @@ private
 		end
 	end
 
-	def locate(searchterm, data)
-		#edge cases
-		return 0 if data.empty?
+	def locate(searchterm, database)
+		#edge case(s)
+		return {:record => nil, :index => 0} if database.empty?
 
 		low  = 0
-		high = data.length-1
+		high = database.length-1
 		mid  = ((low+high)/2)
-
+		result = {:record=>nil, :index=>nil}
+		
 		while (low < high)
-			if searchterm == data[mid].key
-				return data[mid] 
-			elsif searchterm < data[mid].key
+			if searchterm == database[mid].key
+				return {:record => database[mid], :index => mid}
+			elsif searchterm < database[mid].key
 				high = mid-1
-			elsif searchterm > data[mid].key
+			elsif searchterm > database[mid].key
 				low  = mid+1
 			end
 			mid = ((low + high)/2)
 		end
-		return data[mid] if data[mid].key == searchterm
 		
-		#no Record found, figure out best index for a new Record
-		return mid+1 		 if searchterm > data[mid].key
-		return mid 			 if searchterm < data[mid].key
+		#check the last possible spot
+		result = {:record => database[mid], :index => mid} if searchterm == database[mid].key
+		
+		#return the best index to insert a new Record if none is found
+		result[:index] = mid+1 if searchterm > database[mid].key
+		result[:index] = mid if searchterm < database[mid].key
+		
+		
+		result
 	end
 
-	def change_or_create_new(key, value)
-		location = self.locate(key, @database)
-		if location.class == Fixnum
-			@database.insert(location, Record.new(key, value))
-		elsif location.class == Record
-			location.value = value
+	def retrieve_frequency_of(value)
+		locate(value, @frequency)
+	end
+
+	def adjust_frequency_of(value, amount)
+		target = retrieve_frequency_of(value)
+
+		if target[:record]
+			target[:record].value += amount
+		else
+			@frequency.insert(target[:index], Record.new(value, 1))
 
 	end
 
+	def create_new(record, index)
+		if index <= @storage.length
+			@storage.insert(index, record)
+			record #return the record instead of the whole database
+		else
+			"Error: A new record at this index is out of bounds"
+		end
+	end
 end
