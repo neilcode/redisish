@@ -33,7 +33,6 @@ class DatabaseController
 	def process
 		until @commands.empty?
 			this_command = @commands.shift
-			p "processing: #{this_command}\n"
 			action 			 = this_command.first
 			key 				 = this_command[1]   || 'key not found'
 			value				 = this_command.last || nil

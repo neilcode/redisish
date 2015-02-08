@@ -1,42 +1,36 @@
-# 1 Read input from user
-# 2	Convert input string to array of strings 
-# 3 Determine that the first word is a valid command
-# 4   
-# 5  
-# 6  
-class RedisController
-	def initialize
-		@db = RedisishDB.new
-		@transaction_stack = []
+class ThumbtackController
+	def initialize(commands=[], database=Database.new, view=View.new)
+		@commands = commands
+		@database = database
+		@view 		= view
 	end
 
-	def read_input_from_cli
-		command = gets.chomp.split(' ')
-		command.each_with_index do |word, index|
-			puts "#{index}: #{word}"
-		end 
+	def prepare_instructions
+		@commands.map! { |command| command.split(' ') }
+		@view.out("converting instructions...")
 	end
 
-	def route_commands(instruction_set)
-		case instruction_set[0]
-		when "SET"
-		when "GET"
-		when "UNSET"
-		when "NUMEQUALTO"
-		when "BEGIN"
-		else
-			puts "Command not recognized"
+	def process
+		until @commands.empty?
+			this_command = @commands.shift
+			action 			 = this_command.first
+			key 				 = this_command[1]   || 'key not found'
+			value				 = this_command.last || nil
+			result 			 = 'error: no result'
+			
+			case action
+			when 'SET'
+				@database.store(key, value)
+			when 'UNSET'
+				@database.wipe(key)
+			when 'GET'
+				@view.out(@database.retrieve(key))
+			when 'NUMEQUALTO'
+
+				@view.out(@database.keys_set_to(value))
+			else
+				#@view.out(action)
+			end
 		end
 	end
-
-	private
-	class Transaction
-		
-	end
-
 end
-
-
-
-
-
