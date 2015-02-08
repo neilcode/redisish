@@ -7,7 +7,6 @@ class Record
 end
 
 class RedisishDatabase
-	
 	def initialize
 		@storage   = []
 		@frequency = []
@@ -68,12 +67,11 @@ private
 		#check the last possible spot
 		result = {:record => database[mid], :index => mid} if searchterm == database[mid].key
 		
-		#return the best index to insert a new Record if none is found
+		#otherwise set the best possible index for a new record
 		result[:index] = mid+1 if searchterm > database[mid].key
 		result[:index] = mid if searchterm < database[mid].key
 		
-		
-		result
+		return result
 	end
 
 	def retrieve_frequency_of(value)
@@ -93,7 +91,7 @@ private
 	def create_new(record, index)
 		if index <= @storage.length
 			@storage.insert(index, record)
-			record #return the record instead of the whole database
+			return record # insert returns the whole @storage array, return just the new record instead
 		else
 			"Error: A new record at this index is out of bounds"
 		end
