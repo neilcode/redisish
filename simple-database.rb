@@ -3,9 +3,11 @@ require_relative 'model'
 require_relative 'view'
 require_relative 'testdata'
 
+input = ARGF
+
 
 database   = RedisishDatabase.new
 view       = View.new
-controller = ThumbtackController.new(THUMBTACK, database, view)
-controller.prepare_instructions
-controller.process
+controller = RedisishController.new(input, database, view)
+
+controller.process_input
