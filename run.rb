@@ -6,6 +6,6 @@ require_relative 'testdata'
 
 database   = RedisishDatabase.new
 view       = View.new
-controller = ThumbtackController.new([], database, view)
+controller = ThumbtackController.new(SMALLSET, database, view)
 controller.prepare_instructions
 controller.process

@@ -1,4 +1,13 @@
+class Record
+	attr_accessor :key, :value
+	def initialize(key, value)
+		@key   = key
+		@value = value
+	end
+end
+
 class RedisishDatabase
+	
 	def initialize
 		@storage   = []
 		@frequency = []
@@ -22,6 +31,7 @@ class RedisishDatabase
 		if target[:record]
 			adjust_frequency_of(target[:record].value, -1)
 			target[:record].value = nil 
+		end
 	end
 
 	def retrieve_record(key)
@@ -33,15 +43,7 @@ class RedisishDatabase
 		target[:record].value || 0
 	end
 
-	private
-
-	class Record
-		attr_accessor :key, :value
-		def initialize(key, value)
-			@key   = key
-			@value = value
-		end
-	end
+private
 
 	def locate(searchterm, database)
 		#edge case(s)
@@ -85,7 +87,7 @@ class RedisishDatabase
 			target[:record].value += amount
 		else
 			@frequency.insert(target[:index], Record.new(value, 1))
-
+		end
 	end
 
 	def create_new(record, index)
@@ -96,4 +98,5 @@ class RedisishDatabase
 			"Error: A new record at this index is out of bounds"
 		end
 	end
+
 end
