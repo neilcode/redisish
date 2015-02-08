@@ -19,22 +19,24 @@ class ThumbtackController
 			
 			case action
 			when 'SET'
-				@view.out("setting #{key} to #{value}")
+				#@view.out("setting #{key} to #{value}")
 				@database.store(key, value.to_i)
 			when 'UNSET'
-				@view.out("UNsetting #{key}")
+				#@view.out("UNsetting #{key}")
 				@database.wipe(key)
 			when 'GET'
-				@view.out("getting #{key}")
+				#@view.out("getting #{key}")
 				target = @database.retrieve_record(key)
 				if target[:record]
 					@view.out(target[:record].value || 'NULL')
 				else
-					@view.out("#{key} not found")
+					#@view.out("#{key} not found")
 				end
 			when 'NUMEQUALTO'
-				@view.out("finding # of keys set to #{value}")
+				#@view.out("finding # of keys set to #{value}")
 				@view.out(@database.keys_set_to(value.to_i))
+			when 'END'
+				break
 			else
 				#@view.out(action)
 			end
