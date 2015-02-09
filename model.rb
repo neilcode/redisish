@@ -69,7 +69,6 @@ private
 			return {:record => nil, :index => mid}
 		end
 
-
 		low  = 0
 		high = database.length-1
 		mid  = ((low+high)/2)
@@ -122,26 +121,28 @@ private
 end
 
 class TransactionDB < RedisishDatabase
-	attr_reader :storage, :frequency
+	attr_reader :storage, :frequency #remove after testing
 
 	def initialize(parent_transaction={})
 		@storage = []
 		@frequency = []
 		if parent_transaction.any?
-			import_transaction(parent_transaction)
+			import(parent_transaction)
 		end
 	end
 
-	def import_transaction(data)
-		data[:storage].each do |imported_record|
-			@storage << Record.new(imported_record.key, imported_record.value)
-		end
-		data[:frequency].each do |imported_record|
-			@frequency << Record.new(imported_record.key, imported_record.value)
+	def import(data)
+		if data[:storage] && data[:frequency]
+			data[:storage].each do |imported_record|
+				@storage << Record.new(imported_record.key, imported_record.value)
+			end
+			data[:frequency].each do |imported_record|
+				@frequency << Record.new(imported_record.key, imported_record.value)
+			end
 		end
 	end
 
-	def export_transaction
+	def export
 		{:storage => @storage, :frequency => @frequency}
 	end
 end

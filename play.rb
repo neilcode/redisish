@@ -86,8 +86,9 @@ test.store('f', 2)
 test.store('d', 3)
 test.store('a', 4)
 test.store('g', 5)
-p test.frequency
-nextdb = TransactionDB.new(test.export_transaction)
+
+priortransaction = test.export
+nextdb = TransactionDB.new(priortransaction)
 
 nextdb.store('b', 209)
 

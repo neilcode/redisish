@@ -3,6 +3,11 @@ class RedisishController
 		@commands = commands
 		@database = database
 		@view 		= view
+		@transaction_stack = []
+	end
+
+	def any_open_transactions
+		@transaction_stack.any?
 	end
 
 	def process_input
@@ -22,18 +27,19 @@ class RedisishController
 				@database.wipe(key)
 			when 'GET'
 				target = @database.retrieve_record(key)
-				if target[:record]
-					@view.out(target[:record].value || 'NULL')
-				else
-					#@view.out("#{key} not found")
-				end
+				@view.out(target[:record].value || 'NULL') if target[:record]
 			when 'NUMEQUALTO'
 				@view.out(@database.keys_set_to(value.to_i))
 			when 'BEGIN'
-				changes = new_transaction
+				@transaction_stack << true
+				changes = create_new_transaction
 				commit(changes) if changes
 			when 'ROLLBACK'
-				@view.out("NO TRANSACTION")
+				if any_open_transactions
+					@transaction_stack.pop
+					return nil
+				end
+				@view.out("NO TRANSACTION") unless any_open_transactions 
 			else
 				@view.out("unrecognized command #{action}")
 			end
@@ -47,19 +53,17 @@ class RedisishController
 	end
 
 	def commit(data)
-		data.each do |key, value|
-			@database.store(key, value.to_i)
+		data.export[:storage].each do |record|
+			@database.store(record.key, record.value.to_i)
 		end
 	end
 	
-	#NOTE: Data Commands within a transaction rely on a Hash and are thus O(n)
-	#      Committing to the database is O(log N). I chose this design because
-	#      transactions are meant for small amounts of data and this was an 
-	#      acceptable tradeoff
-	def new_transaction(pending_changes_from_parent_transaction={})
-		uncommitted_changes = Hash[pending_changes_from_parent_transaction] 
-		#make a copy to enable new changes to be separate from parent transaction in case of rollback
+	def create_new_transaction(prior_transaction={})
+		current_transaction = TransactionDB.new(prior_transaction)
+		#import any other open transactions before starting
+		
 		current_command = ''
+
 		until @commands.eof?
 			current_command = parse_instruction(@commands.readline.chomp)
 			action 			    = current_command.first
@@ -67,31 +71,35 @@ class RedisishController
 			value				    = current_command.last || nil
 			case action
 			when 'SET'
-				uncommitted_changes[key] = value.to_i
-			when 'GET'
-				if uncommitted_changes.keys.include?(key)
-					@view.out(uncommitted_changes[key])
-				else #check committed data in the database
-					target = @database.retrieve_record(key)
-					if target[:record]
-						@view.out(target[:record].value || 'NULL')
-					end
+				if any_open_transactions 
+					current_transaction.store(key, value.to_i)
+				else
+				 @database.store(key, value.to_i)
 				end
+			when 'GET'
+				target = current_transaction.retrieve_record(key)
+				target = @database.retrieve_record(key) if target[:record] == nil #fall back to database if no transactions manipulated this data				
+				@view.out(target[:record].value || 'NULL') if target[:record]
 			when 'UNSET'
-				uncommitted_changes[key] = nil
+				current_transaction.wipe(key)
 			when 'NUMEQUALTO'
 				num_from_db = @database.keys_set_to(value.to_i)
 				puts "nums from db: #{num_from_db}"
-				num_from_transaction = uncommitted_changes.values.count(value.to_i)
+				num_from_transaction = current_transaction.keys_set_to(value.to_i)
 				puts "nums from transaction: #{num_from_transaction}"
-				@view.out(num_from_db + num_from_transaction)
+				#@view.out(num_from_db + num_from_transaction)
 			when 'BEGIN'
-				changes = new_transaction(uncommitted_changes)
+				@transaction_stack << true
+				changes = create_new_transaction(current_transaction.export)
 				return changes if changes #bubble up if there's been a commit further down the call stack
 			when 'ROLLBACK'
-				return nil
+				if any_open_transactions
+					@transaction_stack.pop 
+					return nil
+				end
 			when 'COMMIT'
-				return uncommitted_changes
+				@transaction_stack.clear
+				return current_transaction
 			when 'END'
 				exit
 			end
