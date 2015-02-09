@@ -18,4 +18,3 @@ controller.listen_for_input
 # to those records, NUMEQUALTO always returns '3' because it polls the database first. if there were 
 # a collection of values stored in the transaction that offsets the 'NUMEQUALTO' to display the right
 # number, that'd be good. Offsets would have to be stored for SET & UNSET
-

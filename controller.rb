@@ -1,4 +1,5 @@
 class RedisishController
+
 	def initialize(commands=ARGF, database=nil, view=nil)
 		@commands = commands
 		@database = database
@@ -26,7 +27,7 @@ private
 
 	def commit(data)
 		data[:storage].each do |record|
-			@database.store(record.key, record.value.to_i)
+			@database.store(record.key, record.value)
 		end
 		@transaction_stack.clear
 		@current_transaction = {}
@@ -40,12 +41,25 @@ private
 		case action
 		when 'END'
 			exit
+
 		when 'SET'
 			if !(value.to_i == 0 && value != '0') #ignore SET command if "SET name" comes in with no value attached
 				any_open_transactions ? @current_transaction.store(key, value.to_i) : 	@database.store(key, value.to_i)
 			end
+
 		when 'UNSET'
-			any_open_transactions ? @current_transaction.wipe(key) : @database.wipe(key)
+			if any_open_transactions
+				if @current_transaction.wipe(key) == false 
+					# couldn't find a record in a transaction to unset 
+					# fallback to database to look for it. if it exists,
+					# retrieve from database, store in transaction with NIL value
+					target = @database.retrieve_record(key)[:record]
+					@current_transaction.store(target.key, nil) if target != nil
+				else
+				end
+			else
+				@database.wipe(key)
+			end
 	
 		when 'GET'
 			if any_open_transactions
@@ -69,8 +83,8 @@ private
 		when 'BEGIN'
 			if @current_transaction.respond_to?(:export)
 				create_new_transaction(@current_transaction.export)
-			elsif @current_transaction
-				create_new_transaction(@current_transaction)
+			else
+				create_new_transaction
 			end
 		
 		when 'ROLLBACK'
@@ -92,6 +106,9 @@ private
 			@view.out("unrecognized command #{action}")
 		end
 	end
+
+
+
 	
 	def create_new_transaction(prior_transaction={})
 

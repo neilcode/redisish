@@ -39,6 +39,8 @@ class RedisishDatabase
 		if target[:record]
 			adjust_frequency_of(target[:record].value, -1)
 			target[:record].value = nil 
+		else
+			return false #needs a fallback search to database. 
 		end
 	end
 
@@ -104,15 +106,12 @@ private
 
 	def adjust_frequency_of(value, amount)
 		return if value == nil
-		puts "adjusting #{value} by #{amount}"
 		target = retrieve_frequency_of(value)
 
 		if target[:record]
 			target[:record].value += amount
-			puts "new value = #{target[:record].value}"
 		else
 			@frequency.insert(target[:index], Record.new(value, 1))
-			puts "no record found so creating a new one: #{value} is now 1"
 		end
 	end
 
