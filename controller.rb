@@ -48,8 +48,9 @@ private
 			end
 
 		when 'UNSET'
+			target = check_for_records(key)
 			if any_open_transactions
-				if @current_transaction.wipe(key) == false 
+				if @current_transaction.wipe(key, target) == false 
 					# couldn't find a record in a transaction to unset 
 					# fallback to database to look for it. if it exists,
 					# retrieve from database, store in transaction with 'DELETE' value
@@ -62,12 +63,7 @@ private
 			end
 	
 		when 'GET'
-			if any_open_transactions
-				target = @current_transaction.retrieve_record(key)
-				target = @database.retrieve_record(key) if target[:record] == nil #fallback if no record found in open transactions					
-			else
-				target = @database.retrieve_record(key)
-			end
+			target = check_for_records(key)
 
 			if target[:record] && target[:record].value == 'DELETE'
 				# edge case: marked for deletion but still inside a uncommitted transaction
@@ -105,13 +101,20 @@ private
 			else
 				@view.out("NO TRANSACTION")		
 			end
+		
 		else
 			@view.out("unrecognized command #{action}")
 		end
 	end
 
-
-
+	def check_for_records(key)
+		if any_open_transactions
+				target = @current_transaction.retrieve_record(key)
+				target = @database.retrieve_record(key) if target[:record] == nil #fallback if no record found in open transactions					
+		else
+				target = @database.retrieve_record(key)
+		end
+	end
 	
 	def create_new_transaction(prior_transaction={})
 

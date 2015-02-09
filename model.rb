@@ -36,8 +36,8 @@ class RedisishDatabase
 		end
 	end
 
-	def wipe(key)
-		target = retrieve_record(key)
+	def wipe(key, record=nil)
+		target = record || retrieve_record(key)
 		if target[:record]
 			adjust_frequency_of(target[:record].value, -1)
 			delete_record(target[:index]) #permanently delete from db
