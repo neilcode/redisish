@@ -1,9 +1,18 @@
 class Record
 	attr_accessor :key, :value
-	def initialize(key, value)
-		@key   = key
-		@value = value
+	def initialize(key=nil, value=nil)
+		if key
+			@key   = key
+			@value = value
+		else
+			raise ArgumentError, 'Record key must have a value'
+		end
 	end
+
+	def to_h
+		{key: @key, value: @value}
+	end
+
 end
 
 class RedisishDatabase
@@ -51,6 +60,15 @@ private
 	def locate(searchterm, database)
 		#edge case(s)
 		return {:record => nil, :index => 0} if database.empty?
+
+		#sorting algorithm takes over once database.length > 1
+		if database.length == 1 && searchterm == database.first.key
+			return {:record => database.first, :index => 0}
+		elsif database.length == 1 && searchterm != database.first.key
+			searchterm > database.first.key ? mid = 1 : mid = 0
+			return {:record => nil, :index => mid}
+		end
+
 
 		low  = 0
 		high = database.length-1
@@ -101,4 +119,29 @@ private
 		end
 	end
 
+end
+
+class TransactionDB < RedisishDatabase
+	attr_reader :storage, :frequency
+
+	def initialize(parent_transaction={})
+		@storage = []
+		@frequency = []
+		if parent_transaction.any?
+			import_transaction(parent_transaction)
+		end
+	end
+
+	def import_transaction(data)
+		data[:storage].each do |imported_record|
+			@storage << Record.new(imported_record.key, imported_record.value)
+		end
+		data[:frequency].each do |imported_record|
+			@frequency << Record.new(imported_record.key, imported_record.value)
+		end
+	end
+
+	def export_transaction
+		{:storage => @storage, :frequency => @frequency}
+	end
 end
