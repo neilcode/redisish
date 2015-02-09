@@ -25,10 +25,11 @@ private
 	end
 
 	def commit(data)
-		puts "COMMITING CHANGES: #{data}"
-		data.export[:storage].each do |record|
+		data[:storage].each do |record|
 			@database.store(record.key, record.value.to_i)
 		end
+		@transaction_stack.clear
+		@current_transaction = {}
 	end
 
 	def execute(command)
@@ -67,25 +68,23 @@ private
 
 		when 'BEGIN'
 			if @current_transaction.respond_to?(:export)
-				changes = create_new_transaction(@current_transaction.export)
+				create_new_transaction(@current_transaction.export)
 			elsif @current_transaction
-				changes = create_new_transaction(@current_transaction)
+				create_new_transaction(@current_transaction)
 			end
-			
-			commit(changes) if changes
-			@transaction_stack.clear
 		
 		when 'ROLLBACK'
 			if any_open_transactions
 				@transaction_stack.pop
 				@current_transaction = @transaction_stack.last
-				return nil
+				return
 			end
 			@view.out("NO TRANSACTION") unless any_open_transactions 
 		
 		when 'COMMIT'
 			if any_open_transactions
-				return @current_transaction
+				commit(@current_transaction.export)
+				return
 			else
 				@view.out("NO TRANSACTION")		
 			end
