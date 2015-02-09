@@ -71,8 +71,10 @@ class RedisishController
 				uncommitted_changes[key] = nil
 			when 'NUMEQUALTO'
 				num_from_db = @database.keys_set_to(value.to_i)
+				puts "nums from db: #{num_from_db}"
 				num_from_transaction = uncommitted_changes.values.count(value.to_i)
-				num_from_db + num_from_transaction
+				puts "nums from transaction: #{num_from_transaction}"
+				@view.out(num_from_db + num_from_transaction)
 			when 'BEGIN'
 				changes = new_transaction(uncommitted_changes)
 				return changes if changes #bubble up if there's been a commit further down the call stack
