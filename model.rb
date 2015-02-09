@@ -30,7 +30,7 @@ class RedisishDatabase
 			adjust_frequency_of(target[:record].value, -1) if target[:record].value != nil
 			target[:record].value = new_value
 			adjust_frequency_of(target[:record].value, 1)
-		else
+		elsif new_value != 'DELETE'
 			create_new(Record.new(key, new_value), target[:index])
 			adjust_frequency_of(new_value, 1)
 		end
@@ -154,18 +154,18 @@ class TransactionDB < RedisishDatabase
 		if target[:record]
 			adjust_frequency_of(target[:record].value, -1) if target[:record].value != nil
 			target[:record].value = new_value
-			adjust_frequency_of(target[:record].value, 1)
+			adjust_frequency_of(target[:record].value, 1) unless target[:record].value == 'DELETE'
 		else
 			create_new(Record.new(key, new_value), target[:index])
-			adjust_frequency_of(new_value, 1)
+			adjust_frequency_of(new_value, 1) unless new_value == 'DELETE'
 		end
 	end
 
 	#overwrite parent method to mark records for deletion
 	#instead of deleting them right away in case of rollback
 	def wipe(key)
-		target = retrieve_record(key)
-		if target[:record]
+		target = retrieve_record(key) 
+		if target[:record] #if found in transaction
 			adjust_frequency_of(target[:record].value, -1)
 			target[:record].value = 'DELETE' 
 		else

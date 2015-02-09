@@ -54,8 +54,8 @@ private
 					# fallback to database to look for it. if it exists,
 					# retrieve from database, store in transaction with 'DELETE' value
 					target = @database.retrieve_record(key)[:record]
-					@current_transaction.store(target.key, 'DELETE') if target != nil
-				else
+					@current_transaction.store(target.key, target.value) if target != nil
+					@current_transaction.wipe(target.key) if target != nil
 				end
 			else
 				@database.wipe(key)
