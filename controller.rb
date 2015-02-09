@@ -31,6 +31,7 @@ class RedisishController
 				@view.out(@database.keys_set_to(value.to_i))
 			when 'BEGIN'
 				changes = new_transaction
+				commit(changes) if changes
 			when 'ROLLBACK'
 				@view.out("NO TRANSACTION")
 			else
@@ -44,7 +45,17 @@ class RedisishController
 	def parse_instruction(command)
 		command.split(' ')
 	end
+
+	def commit(data)
+		data.each do |key, value|
+			@database.store(key, value.to_i)
+		end
+	end
 	
+	#NOTE: Data Commands within a transaction rely on a Hash and are thus O(n)
+	#      Committing to the database is O(log N). I chose this design because
+	#      transactions are meant for small amounts of data and this was an 
+	#      acceptable tradeoff
 	def new_transaction(pending_changes_from_parent_transaction={})
 		uncommitted_changes = Hash[pending_changes_from_parent_transaction] 
 		#make a copy to enable new changes to be separate from parent transaction in case of rollback
@@ -54,10 +65,9 @@ class RedisishController
 			action 			    = current_command.first
 			key 				    = current_command[1]   || 'key not found'
 			value				    = current_command.last || nil
-
 			case action
 			when 'SET'
-				uncommitted_changes[key] = value
+				uncommitted_changes[key] = value.to_i
 			when 'GET'
 				if uncommitted_changes.keys.include?(key)
 					@view.out(uncommitted_changes[key])
