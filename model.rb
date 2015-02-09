@@ -56,7 +56,10 @@ class RedisishDatabase
 	end
 
 private
-
+	
+	#binary search for O(log N)
+	#returns with either a located record or the best index to insert a new one
+	#to maintain ordered data ascending by key
 	def locate(searchterm, database)
 		#edge case(s)
 		return {:record => nil, :index => 0} if database.empty?
@@ -100,12 +103,16 @@ private
 	end
 
 	def adjust_frequency_of(value, amount)
+		return if value == nil
+		puts "adjusting #{value} by #{amount}"
 		target = retrieve_frequency_of(value)
 
 		if target[:record]
 			target[:record].value += amount
+			puts "new value = #{target[:record].value}"
 		else
 			@frequency.insert(target[:index], Record.new(value, 1))
+			puts "no record found so creating a new one: #{value} is now 1"
 		end
 	end
 
@@ -121,7 +128,7 @@ private
 end
 
 class TransactionDB < RedisishDatabase
-	#attr_reader :storage, :frequency #remove after testing
+	attr_reader :storage, :frequency #remove after testing
 
 	def initialize(parent_transaction={})
 		@storage = []
