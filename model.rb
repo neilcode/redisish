@@ -4,6 +4,14 @@ class Record
 		@key   = key
 		@value = value
 	end
+
+	def to_a
+		[@key, @value]
+	end
+
+	def to_h
+		{@key => @value}
+	end
 end
 
 class RedisishDatabase
@@ -99,6 +107,12 @@ private
 		else
 			"Error: A new record at this index is out of bounds"
 		end
+	end
+
+end
+
+class Transaction < RedisishDatabase
+	def initialize
 	end
 
 end
