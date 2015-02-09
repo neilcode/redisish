@@ -52,9 +52,9 @@ private
 				if @current_transaction.wipe(key) == false 
 					# couldn't find a record in a transaction to unset 
 					# fallback to database to look for it. if it exists,
-					# retrieve from database, store in transaction with NIL value
+					# retrieve from database, store in transaction with 'DELETE' value
 					target = @database.retrieve_record(key)[:record]
-					@current_transaction.store(target.key, nil) if target != nil
+					@current_transaction.store(target.key, 'DELETE') if target != nil
 				else
 				end
 			else
@@ -69,7 +69,10 @@ private
 				target = @database.retrieve_record(key)
 			end
 
-			if target[:record]
+			if target[:record] && target[:record].value == 'DELETE'
+				# edge case: marked for deletion but still inside a uncommitted transaction
+				@view.out('NULL')
+			elsif target[:record]
 				@view.out(target[:record].value || 'NULL') 
 			else
 				@view.out('NULL')

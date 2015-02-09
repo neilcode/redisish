@@ -24,7 +24,9 @@ class RedisishDatabase
 	def store(key, new_value)
 		target = retrieve_record(key)
 
-		if target[:record]
+		if target[:record] && new_value == 'DELETE'
+			delete_record(target[:index])
+		elsif target[:record]
 			adjust_frequency_of(target[:record].value, -1) if target[:record].value != nil
 			target[:record].value = new_value
 			adjust_frequency_of(target[:record].value, 1)
@@ -38,7 +40,7 @@ class RedisishDatabase
 		target = retrieve_record(key)
 		if target[:record]
 			adjust_frequency_of(target[:record].value, -1)
-			target[:record].value = nil 
+			delete_record(target[:index]) #permanently delete from db
 		else
 			return false #needs a fallback search to database. 
 		end
@@ -124,6 +126,10 @@ private
 		end
 	end
 
+	def delete_record(index)
+		@storage.delete_at(index)
+	end
+
 end
 
 class TransactionDB < RedisishDatabase
@@ -136,6 +142,38 @@ class TransactionDB < RedisishDatabase
 			import(parent_transaction)
 		end
 	end
+	
+	def export
+		{:storage => @storage, :frequency => @frequency}
+	end
+
+	#overwrite parent method to ignore 'DELETE' messages within a transaction
+	def store(key, new_value)
+		target = retrieve_record(key)
+
+		if target[:record]
+			adjust_frequency_of(target[:record].value, -1) if target[:record].value != nil
+			target[:record].value = new_value
+			adjust_frequency_of(target[:record].value, 1)
+		else
+			create_new(Record.new(key, new_value), target[:index])
+			adjust_frequency_of(new_value, 1)
+		end
+	end
+
+	#overwrite parent method to mark records for deletion
+	#instead of deleting them right away in case of rollback
+	def wipe(key)
+		target = retrieve_record(key)
+		if target[:record]
+			adjust_frequency_of(target[:record].value, -1)
+			target[:record].value = 'DELETE' 
+		else
+			return false #needs a fallback search to database. 
+		end
+	end
+
+	private
 
 	def import(data)
 		if data[:storage] && data[:frequency]
@@ -148,7 +186,4 @@ class TransactionDB < RedisishDatabase
 		end
 	end
 
-	def export
-		{:storage => @storage, :frequency => @frequency}
-	end
 end
