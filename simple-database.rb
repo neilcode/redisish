@@ -3,11 +3,11 @@ require_relative 'model'
 require_relative 'view'
 require_relative 'testdata'
 
-input = ARGF
+user_input = ARGF
 
 
-database   = RedisishDatabase.new
 view       = View.new
-controller = RedisishController.new(input, database, view)
+database   = RedisishDatabase.new
+controller = RedisishController.new(user_input, database, view)
 
 controller.process_input
