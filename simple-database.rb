@@ -10,7 +10,7 @@ view       = View.new
 database   = RedisishDatabase.new
 controller = RedisishController.new(user_input, database, view)
 
-controller.process_input
+controller.listen_for_input
 
 #WIP: 
 # create some datastructure to store offsets so that NUMEQUALTO works inside a transaction.

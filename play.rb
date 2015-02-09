@@ -87,12 +87,6 @@ test.store('d', 3)
 test.store('a', 4)
 test.store('g', 5)
 
-priortransaction = test.export
-nextdb = TransactionDB.new(priortransaction)
-
-nextdb.store('b', 209)
-
-p test.frequency
-p nextdb.frequency
+p test.class
 
 

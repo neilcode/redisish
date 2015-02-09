@@ -4,9 +4,8 @@ class RedisishController
 		@database = database
 		@view 		= view
 		@transaction_stack = []
-		@current_transaction = nil
+		@current_transaction = {}
 	end
-
 
 	def listen_for_input
 		until @commands.eof?
@@ -40,29 +39,51 @@ private
 		when 'END'
 			exit
 		when 'SET'
-			@database.store(key, value.to_i)
+			any_open_transactions ? @current_transaction.store(key, value.to_i) : 	@database.store(key, value.to_i)
+	
 		when 'UNSET'
-			@database.wipe(key)
+			any_open_transactions ? @current_transaction.wipe(key) : @database.wipe(key)
+	
 		when 'GET'
-			target = @database.retrieve_record(key)
+			target = @current_transaction.retrieve_record(key)
+			target = @database.retrieve_record(key) if target[:record] == nil #fallback to db if no record in transactional db
 			@view.out(target[:record].value || 'NULL') if target[:record]
+		
 		when 'NUMEQUALTO'
-			@view.out(@database.keys_set_to(value.to_i))
+			#WIP
+			@view.out("from db: #{@database.keys_set_to(value.to_i)}")
+			@view.out("from transaction: #{@current_transaction.keys_set_to(value.to_i)}") if any_open_transactions
+
 		when 'BEGIN'
-			changes = create_new_transaction(@current_transaction)
+			if @current_transaction.respond_to?(:export)
+				changes = create_new_transaction(@current_transaction.export)
+			else
+				changes = create_new_transaction
+			end
 			commit(changes) if changes
+		
 		when 'ROLLBACK'
 			if any_open_transactions
 				@transaction_stack.pop
+				@current_transaction = @transaction_stack.last
 				return nil
 			end
 			@view.out("NO TRANSACTION") unless any_open_transactions 
+		
+		when 'COMMIT'
+			if any_open_transactions
+				@transaction_stack.clear
+				return @current_transaction
+			else
+				@view.out("NO TRANSACTION")		
+			end
 		else
 			@view.out("unrecognized command #{action}")
 		end
 	end
 	
 	def create_new_transaction(prior_transaction={})
+
 		this_transaction = TransactionDB.new(prior_transaction)
 		@transaction_stack << this_transaction
 		@current_transaction = @transaction_stack.last
