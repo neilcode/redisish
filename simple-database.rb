@@ -19,4 +19,5 @@ controller.process_input
 # a collection of values stored in the transaction that offsets the 'NUMEQUALTO' to display the right
 # number, that'd be good. Offsets would have to be stored for SET & UNSET
 
-# COMMIT all transactional data to the actual db. this should be easy-ish.
+# could the transaction be refactored to instantiate a new RedisishDatabase to take advantage of its O(log N) stuff?
+# would that clean up the WET code?
