@@ -58,7 +58,8 @@ private
 					# retrieve from database, store in transaction with 'DELETE' value
 					target = @database.retrieve_record(key)[:record]
 					@current_transaction.store(target.key, target.value) if target != nil
-					@current_transaction.wipe(target.key, -1)
+					@current_transaction.wipe(target.key, -1) 
+					#offset by -1 to reflect the correct NUMEQUALTO during transactions
 
 				end
 			else
@@ -114,9 +115,6 @@ private
 			@view.out("unrecognized command #{action}")
 		end
 	end
-
-
-
 	
 	def create_new_transaction(prior_transaction={})
 

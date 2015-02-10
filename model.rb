@@ -135,7 +135,6 @@ private
 end
 
 class TransactionDB < RedisishDatabase
-	attr_reader :storage, :frequency #remove after testing
 
 	def initialize(parent_transaction={})
 		@storage = []
