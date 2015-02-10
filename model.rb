@@ -1,5 +1,7 @@
 class Record
-	attr_accessor :key, :value
+	attr_reader   :key
+	attr_accessor :value
+	
 	def initialize(key=nil, value=nil)
 		if key
 			@key   = key
@@ -12,7 +14,6 @@ class Record
 	def to_h
 		{key: @key, value: @value}
 	end
-
 end
 
 class RedisishDatabase
@@ -22,15 +23,16 @@ class RedisishDatabase
 	end
 
 	def store(key, new_value)
-		target = retrieve_record(key)
+		target = retrieve_record(key) 
 
-		if target[:record] && new_value == 'DELETE'
+		if target[:record] && new_value == 'DELETE' #found existing key and it is marked for deletion
+			adjust_frequency_of(target[:record].value, -1)
 			delete_record(target[:index])
 		elsif target[:record]
 			adjust_frequency_of(target[:record].value, -1) if target[:record].value != nil
 			target[:record].value = new_value
 			adjust_frequency_of(target[:record].value, 1)
-		else
+		elsif new_value != 'DELETE'
 			create_new(Record.new(key, new_value), target[:index])
 			adjust_frequency_of(new_value, 1)
 		end
@@ -150,7 +152,7 @@ class TransactionDB < RedisishDatabase
 	#overwrite parent method to ignore 'DELETE' messages within a transaction
 	def store(key, new_value)
 		target = retrieve_record(key)
-
+		new_value = nil if new_value == "DELETE" 
 		if target[:record]
 			adjust_frequency_of(target[:record].value, -1) if target[:record].value != nil
 			target[:record].value = new_value

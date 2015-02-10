@@ -26,11 +26,13 @@ private
 	end
 
 	def commit(data)
-		data[:storage].each do |record|
-			@database.store(record.key, record.value)
+		if data[:storage] != nil
+			data[:storage].each do |record|
+				@database.store(record.key, record.value)
+			end
+			@transaction_stack.clear
+			@current_transaction = {}
 		end
-		@transaction_stack.clear
-		@current_transaction = {}
 	end
 
 	def execute(command)
@@ -55,7 +57,6 @@ private
 					# retrieve from database, store in transaction with 'DELETE' value
 					target = @database.retrieve_record(key)[:record]
 					@current_transaction.store(target.key, 'DELETE') if target != nil
-				else
 				end
 			else
 				@database.wipe(key)
@@ -79,9 +80,10 @@ private
 			end
 		
 		when 'NUMEQUALTO'
-			#WIP
-			@view.out("from db: #{@database.keys_set_to(value.to_i)}")
-			@view.out("from transaction: #{@current_transaction.keys_set_to(value.to_i)}") if any_open_transactions
+			sum = @database.keys_set_to(value.to_i)
+			sum += @current_transaction.keys_set_to(value.to_i) if any_open_transactions
+			
+			@view.out(sum)
 
 		when 'BEGIN'
 			if @current_transaction.respond_to?(:export)
