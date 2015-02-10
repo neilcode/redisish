@@ -51,12 +51,15 @@ private
 
 		when 'UNSET'
 			if any_open_transactions
-				if @current_transaction.wipe(key) == false 
+				success = @current_transaction.wipe(key)
+				if success == false 
 					# couldn't find a record in a transaction to unset 
 					# fallback to database to look for it. if it exists,
 					# retrieve from database, store in transaction with 'DELETE' value
 					target = @database.retrieve_record(key)[:record]
-					@current_transaction.store(target.key, 'DELETE') if target != nil
+					@current_transaction.store(target.key, target.value) if target != nil
+					@current_transaction.wipe(target.key, -1)
+
 				end
 			else
 				@database.wipe(key)

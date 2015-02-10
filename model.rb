@@ -38,10 +38,10 @@ class RedisishDatabase
 		end
 	end
 
-	def wipe(key)
+	def wipe(key, offset=0)
 		target = retrieve_record(key)
 		if target[:record]
-			adjust_frequency_of(target[:record].value, -1)
+			adjust_frequency_of(target[:record].value, -1+offset)
 			delete_record(target[:index]) #permanently delete from db
 		else
 			return false #needs a fallback search to database. 
@@ -165,10 +165,10 @@ class TransactionDB < RedisishDatabase
 
 	#overwrite parent method to mark records for deletion
 	#instead of deleting them right away in case of rollback
-	def wipe(key)
+	def wipe(key, offset=0)
 		target = retrieve_record(key)
 		if target[:record]
-			adjust_frequency_of(target[:record].value, -1)
+			adjust_frequency_of(target[:record].value, -1+offset)
 			target[:record].value = 'DELETE' 
 		else
 			return false #needs a fallback search to database. 
